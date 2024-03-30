@@ -815,8 +815,6 @@ func computePostOrder(blocks []*cfg.Block) []int {
 // to the function, the set of assertions that must hold to avoid possible nil flow errors.
 func BackpropAcrossFunc(ctx context.Context, pass *analysis.Pass, decl *ast.FuncDecl,
 	functionContext FunctionContext, graph *cfg.CFG) ([]annotation.FullTrigger, error) {
-	util.WriteToErrorLog(fmt.Sprintf("START ANALYZING %s.%s", pass.Pkg.Path(), decl.Name.Name))
-	start := time.Now()
 	// We transform the CFG to have it reflect the implicit control flow that happens
 	// inside short-circuiting boolean expressions.
 	graph, richCheckBlocks, exprNonceMap := preprocess(graph, functionContext)
@@ -980,18 +978,6 @@ func BackpropAcrossFunc(ctx context.Context, pass *analysis.Pass, decl *ast.Func
 		clear(updatedThisRound)
 		currRootAssertionNode, nextRootAssertionNode = nextRootAssertionNode, nil
 	}
-
-	triggerLen := 0
-	if currRootAssertionNode != nil {
-		triggerLen = len(currRootAssertionNode.triggers)
-	}
-
-	end := time.Now()
-	// fmt.Println("pkg.func,time in sec,iterations,triggers")
-	s := fmt.Sprintf("%s.%s,%s,%d,%d", pass.Pkg.Path(), decl.Name.Name, end.Sub(start), roundCount, triggerLen)
-	_ = s
-	// util.WriteToErrorLog(s)
-	// fmt.Println(s)
 
 	// Return the generated full triggers at the entry block; we're done!
 	if currRootAssertionNode == nil {

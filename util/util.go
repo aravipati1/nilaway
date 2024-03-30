@@ -20,8 +20,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"log"
-	"os"
 	"regexp"
 	"strings"
 
@@ -472,15 +470,4 @@ func truncatePosition(position token.Position) token.Position {
 // PosToLocation converts a token.Pos as a real code location, of token.Position.
 func PosToLocation(pos token.Pos, pass *analysis.Pass) token.Position {
 	return truncatePosition(pass.Fset.Position(pos))
-}
-
-func WriteToErrorLog(s string) {
-	f, err := os.OpenFile("/tmp/nilaway_log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer f.Close()
-
-	log.SetOutput(f)
-	log.Println(s)
 }

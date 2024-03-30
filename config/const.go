@@ -23,7 +23,7 @@ package config
 // In practice, a value of StableRoundLimit >= 2 has shown to provide sound analysis, capturing most false negatives.
 // After experimentation, we observed that using StableRoundLimit = 5 with NilAway yields similar analysis time compared
 // to lower values, making it a good compromise for precise results.
-const StableRoundLimit = 2
+const StableRoundLimit = 5
 
 // ErrorOnNilableMapRead configures whether reading from nil maps should be considered an error.
 // Since Go does not panic on this, right now we do not interpret it as one, but this could be

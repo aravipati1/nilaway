@@ -750,7 +750,7 @@ func testNonLiteralMapAccess(mp map[int]*int, i, j int) {
 			print(*mp[localVar])
 		}
 
-	case 80:
+	case 11:
 		// TODO: This case is currently a false negative since NilAway does not track the value of `i` across consecutive
 		//  map accesses. We plan to support this in a follow-up PR.
 		i = 0
@@ -758,5 +758,11 @@ func testNonLiteralMapAccess(mp map[int]*int, i, j int) {
 			i = 100
 			print(*mp[i]) // TODO: report error here
 		}
+
+	case 12:
+		if _, ok := mp[i]; !ok {
+			mp[i] = new(int)
+		}
+		print(*mp[i])
 	}
 }
