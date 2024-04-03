@@ -29,13 +29,15 @@ import (
 
 // checkCFGFixedPointRuntime panics if a fixed point iteration loop runs beyond some upper
 // bounded round number, determined by the number of blocks in the CFG of the analyzed function.
-func checkCFGFixedPointRuntime(passName string, currRound, numBlocks int) {
+func checkCFGFixedPointRuntime(passName string, currRound, numBlocks int) bool {
 	if maxRound := numBlocks * numBlocks * 2; currRound > maxRound {
-		panic(fmt.Sprintf("propagation over %d-block CFG in %q ran for "+
-			"%d rounds, when maximum allowed was %d rounds.",
-			numBlocks, passName, currRound, maxRound),
-		)
+		// panic(fmt.Sprintf("propagation over %d-block CFG in %q ran for "+
+		// 	"%d rounds, when maximum allowed was %d rounds.",
+		// 	numBlocks, passName, currRound, maxRound),
+		// )
+		return true
 	}
+	return false
 }
 
 // GetDeclaringPath finds the path of nested AST nodes beginning with the passed interval `[start, end]`

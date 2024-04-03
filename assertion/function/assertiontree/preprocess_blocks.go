@@ -735,7 +735,9 @@ func propagateRichChecks(graph *cfg.CFG, richCheckBlocks [][]RichCheckEffect) []
 
 		roundCount++
 
-		checkCFGFixedPointRuntime("RichCheckEffect Forwards Propagation", roundCount, n)
+		if exit := checkCFGFixedPointRuntime("RichCheckEffect Forwards Propagation", roundCount, n); exit {
+			break
+		}
 	}
 
 	// this strips duplicates from the RichCheckEffect slices

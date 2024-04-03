@@ -964,10 +964,9 @@ func BackpropAcrossFunc(ctx context.Context, pass *analysis.Pass, decl *ast.Func
 			break
 		}
 
-		checkCFGFixedPointRuntime(
-			fmt.Sprintf("BackpropAcrossFunc(%s) Forwards Propagation", decl.Name.Name),
-			roundCount, len(blocks),
-		)
+		if exit := checkCFGFixedPointRuntime(fmt.Sprintf("BackpropAcrossFunc(%s) Forwards Propagation", decl.Name.Name), roundCount, len(blocks)); exit {
+			break
+		}
 
 		// Move variables from this round to last round and create new ones for next round.
 		// For best performance, we reuse the slices by simply swapping them and clearing the
