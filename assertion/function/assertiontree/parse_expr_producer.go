@@ -327,8 +327,7 @@ func (r *RootAssertionNode) ParseExprAsProducer(expr ast.Expr, doNotTrack bool) 
 		}
 		if recv != nil {
 			// receiver is trackable
-			_, isIndexIdent := expr.Index.(*ast.Ident)
-			if r.isStable(expr.Index) || (util.TypeIsDeeplyMap(util.TypeOf(r.Pass(), expr.X)) && isIndexIdent) {
+			if r.isStable(expr.Index) {
 				// receiver is trackable and index is stable, so return an augmented path
 				return append(recv, &indexAssertionNode{
 					index:    expr.Index,
