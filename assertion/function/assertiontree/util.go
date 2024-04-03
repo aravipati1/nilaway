@@ -22,6 +22,7 @@ import (
 
 	"go.uber.org/nilaway/annotation"
 	"go.uber.org/nilaway/util"
+	"go.uber.org/nilaway/util/asthelper"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ast/astutil"
 )
@@ -266,23 +267,39 @@ func AddNilCheck(pass *analysis.Pass, expr ast.Expr) (trueCheck, falseCheck Root
 			// Iterate over already created triggers and update the producer, if necessary.
 			// Here we can safely match on consumer expressions since we are looking at adding negative nil checks,
 			// and they rightly should be applied to only consumers with the same expression as the one in the nil check.
-			if e, ok := expr.(*ast.IndexExpr); ok {
-				if _, ok := e.X.(*ast.Ident); ok {
-					if _, ok := e.Index.(*ast.Ident); ok {
-						for i := range self.triggers {
-							if self.eqStableTemp(self.triggers[i].Consumer.Expr, expr) {
-								self.triggers[i] = annotation.FullTrigger{
-									Producer: &annotation.ProduceTrigger{
-										Annotation: trigger,
-										Expr:       expr,
-									},
-									Consumer: self.triggers[i].Consumer,
-								}
-							}
+			if _, ok := expr.(*ast.IndexExpr); ok {
+				for i := range self.triggers {
+					s1, _ := asthelper.PrintExpr(self.triggers[i].Consumer.Expr, self.Pass(), false)
+					s2, _ := asthelper.PrintExpr(expr, self.Pass(), false)
+					if s1 == s2 {
+						self.triggers[i] = annotation.FullTrigger{
+							Producer: &annotation.ProduceTrigger{
+								Annotation: trigger,
+								Expr:       expr,
+							},
+							Consumer: self.triggers[i].Consumer,
 						}
 					}
 				}
 			}
+
+			// if e, ok := expr.(*ast.IndexExpr); ok {
+			// 	if _, ok := e.X.(*ast.Ident); ok {
+			// 		if _, ok := e.Index.(*ast.Ident); ok {
+			// 			for i := range self.triggers {
+			// 				if self.eqStableTemp(self.triggers[i].Consumer.Expr, expr) {
+			// 					self.triggers[i] = annotation.FullTrigger{
+			// 						Producer: &annotation.ProduceTrigger{
+			// 							Annotation: trigger,
+			// 							Expr:       expr,
+			// 						},
+			// 						Consumer: self.triggers[i].Consumer,
+			// 					}
+			// 				}
+			// 			}
+			// 		}
+			// 	}
+			// }
 		}
 	}
 
@@ -397,79 +414,6 @@ func AddNilCheck(pass *analysis.Pass, expr ast.Expr) (trueCheck, falseCheck Root
 		}
 	}
 	return noop, noop, true
-}
-
-// Between two stable expressions, check if we expect them to produce the same value
-// precondition: isStable(left) && isStable(right), then checks if left and right are equal
-func (r *RootAssertionNode) eqStableTemp(left, right ast.Expr) bool {
-	right = astutil.Unparen(right)
-	switch left := astutil.Unparen(left).(type) {
-	case *ast.BasicLit:
-		if right, ok := right.(*ast.BasicLit); ok {
-			return left.Value == right.Value
-		}
-		return false
-	case *ast.BinaryExpr:
-		if right, ok := right.(*ast.BinaryExpr); ok {
-			return left.Op == right.Op &&
-				r.eqStableTemp(left.X, right.X) && r.eqStableTemp(left.Y, right.Y)
-		}
-		return false
-	case *ast.UnaryExpr:
-		if right, ok := right.(*ast.UnaryExpr); ok {
-			return left.Op == right.Op && r.eqStableTemp(left.X, right.X)
-		}
-		return false
-	case *ast.CallExpr:
-		if right, ok := right.(*ast.CallExpr); ok {
-			if len(left.Args) != len(right.Args) {
-				return false
-			}
-			for i := range left.Args {
-				if !r.eqStableTemp(left.Args[i], right.Args[i]) {
-					return false
-				}
-			}
-			return r.eqStableTemp(left.Fun, right.Fun)
-		}
-		return false
-	case *ast.Ident:
-		if right, ok := right.(*ast.Ident); ok {
-			// if the two identifiers are special values, just check them for string equality
-			if (r.isNil(left) && r.isNil(right)) ||
-				(r.isBuiltIn(left) && r.isBuiltIn(right)) ||
-				(r.isConst(left) && (r.isConst(right))) ||
-				(r.isPkgName(left) && r.isPkgName(right)) {
-				return left.Name == right.Name
-			}
-			rightVarObj, rightOk := r.ObjectOf(right).(*types.Var)
-			leftVarObj, leftOk := r.ObjectOf(left).(*types.Var)
-
-			if !rightOk || !leftOk {
-				return false // here, we have eliminated all of the cases in which
-				// non-variable identifiers can be equal, so if either side is a
-				// non-variable then the sides are not equal
-			}
-			// if they are variables, check them for declaration equality
-			return leftVarObj == rightVarObj
-		}
-		return false
-	case *ast.SelectorExpr:
-		if right, ok := right.(*ast.SelectorExpr); ok {
-			if !r.eqStableTemp(left.Sel, right.Sel) {
-				return false
-			}
-			return r.eqStableTemp(left.X, right.X)
-		}
-		return false
-	case *ast.IndexExpr:
-		if right, ok := right.(*ast.IndexExpr); ok {
-			return r.eqStableTemp(left.X, right.X) && r.eqStableTemp(left.Index, right.Index)
-		}
-		return false
-	default:
-		return false
-	}
 }
 
 // CopyNode computes a deep code of an AssertionNode
