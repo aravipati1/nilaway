@@ -19,6 +19,13 @@ This package aims to test nilability behavior surrounding maps
 */
 package maps
 
+import (
+	"strconv"
+	"strings"
+
+	"ignoredpkg1"
+)
+
 var nilableMap map[int]*int
 
 // nonnil(nonnilMap)
@@ -831,6 +838,10 @@ type A struct {
 	g int
 }
 
+func (a *A) getF() int {
+	return a.f
+}
+
 type mapType map[string][]*string
 
 // nonnil(mp, mp[])
@@ -881,6 +892,12 @@ func testNonLiteralMapAccess(mp map[int]*int, i, j int) {
 		a := &A{}
 		if mp[a.f] != nil {
 			print(*mp[a.g]) //want "lacking guarding"
+		}
+
+	case 19:
+		a := &A{}
+		if mp[a.getF()] != nil {
+			print(*mp[a.getF()]) //want "lacking guarding"
 		}
 
 	case 9:
@@ -940,6 +957,27 @@ func testNonLiteralMapAccess(mp map[int]*int, i, j int) {
 			return
 		}
 		print(*vs[0])
+
+	// below cases test for non-literal indices from excluded packages and library functions
+	case 15:
+		if mp[ignoredpkg1.RetZero()] != nil {
+			print(*mp[ignoredpkg1.RetZero()])
+		}
+
+	case 16:
+		if mp[strings.IndexRune("abc", 'a')] != nil {
+			print(*mp[strings.IndexRune("abc", 'a')])
+		}
+
+	case 17:
+		if mp[ignoredpkg1.GlobalVarInt] != nil {
+			print(*mp[ignoredpkg1.GlobalVarInt])
+		}
+
+	case 18:
+		if mp[strconv.IntSize] != nil {
+			print(*mp[strconv.IntSize])
+		}
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 
 	"go.uber.org/nilaway/annotation"
 	"go.uber.org/nilaway/assertion/function/producer"
+	"go.uber.org/nilaway/config"
 	"go.uber.org/nilaway/util"
 )
 
@@ -330,6 +331,7 @@ func (r *RootAssertionNode) ParseExprAsProducer(expr ast.Expr, doNotTrack bool) 
 			// If the index is not stable, it is still considered trackable if it falls into any of these categories:
 			// - Index is a variable (e.g., `m[i]`)
 			// - Index is a built-in function (e.g., `m[len(m)-1]`)
+			// - Index is a method call from a package not in scope (e.g., `m[strings.IndexRune("abc", 'a')]`)
 			// - Index is a field selector chain (e.g., `m[g.h.i]`)
 			// TODO: above non-literal indices should only be considered trackable if no reassignment is found between
 			//  accesses. For example, `i := 0; if m[i] != nil { i = 10; return *m[i] }` should not be considered trackable
@@ -349,8 +351,15 @@ func (r *RootAssertionNode) ParseExprAsProducer(expr ast.Expr, doNotTrack bool) 
 					if fun, ok := index.Fun.(*ast.Ident); ok {
 						return r.isBuiltIn(fun)
 					}
+					if selFun, ok := index.Fun.(*ast.SelectorExpr); ok {
+						return isIndexTrackable(selFun)
+					}
 					return false
 				case *ast.SelectorExpr:
+					conf := r.Pass().ResultOf[config.Analyzer].(*config.Config)
+					if funcObj, ok := r.ObjectOf(index.Sel).(*types.Func); ok {
+						return !conf.IsPkgInScope(funcObj.Pkg())
+					}
 					return util.IsFieldSelectorChain(index)
 				default:
 					return r.isStable(expr)

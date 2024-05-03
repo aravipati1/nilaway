@@ -1290,16 +1290,22 @@ func (r *RootAssertionNode) eqStable(left, right ast.Expr) bool {
 				(r.isPkgName(left) && r.isPkgName(right)) {
 				return left.Name == right.Name
 			}
-			rightVarObj, rightOk := r.ObjectOf(right).(*types.Var)
-			leftVarObj, leftOk := r.ObjectOf(left).(*types.Var)
 
-			if !rightOk || !leftOk {
-				return false // here, we have eliminated all of the cases in which
-				// non-variable identifiers can be equal, so if either side is a
-				// non-variable then the sides are not equal
+			// if the two identifiers are functions from out-of-scope package, check them for declaration equality
+			conf := r.Pass().ResultOf[config.Analyzer].(*config.Config)
+			leftFuncObj, leftFuncOk := r.ObjectOf(left).(*types.Func)
+			rightFuncObj, rightFuncOk := r.ObjectOf(right).(*types.Func)
+			if leftFuncOk && rightFuncOk {
+				return !conf.IsPkgInScope(leftFuncObj.Pkg()) && !conf.IsPkgInScope(rightFuncObj.Pkg()) &&
+					leftFuncObj == rightFuncObj
 			}
-			// if they are variables, check them for declaration equality
-			return leftVarObj == rightVarObj
+
+			// if the two identifiers are variables, check them for declaration equality
+			leftVarObj, leftOk := r.ObjectOf(left).(*types.Var)
+			rightVarObj, rightOk := r.ObjectOf(right).(*types.Var)
+			if leftOk && rightOk {
+				return leftVarObj == rightVarObj
+			}
 		}
 		return false
 	case *ast.SelectorExpr:
