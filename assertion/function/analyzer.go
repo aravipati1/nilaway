@@ -25,6 +25,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 
 	"go.uber.org/nilaway/annotation"
 	"go.uber.org/nilaway/assertion/anonymousfunc"
@@ -114,7 +115,7 @@ func run(pass *analysis.Pass) ([]annotation.FullTrigger, error) {
 	}
 
 	// Set up variables for synchronization and communication.
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(conf.FuncAnalysisTimeout)*time.Second)
 	defer cancel()
 	var wg sync.WaitGroup
 	funcChan := make(chan functionResult)

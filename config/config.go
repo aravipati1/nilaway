@@ -32,6 +32,8 @@ type Config struct {
 	PrettyPrint bool
 	// GroupErrorMessages indicates whether similar error messages should be grouped.
 	GroupErrorMessages bool
+	// FuncAnalysisTimeout sets a timeout (in sec) for analyzing each function
+	FuncAnalysisTimeout int
 	// ExperimentalStructInitEnable indicates whether experimental struct initialization is enabled.
 	ExperimentalStructInitEnable bool
 	// ExperimentalAnonymousFuncEnable indicates whether experimental anonymous function support is enabled.
@@ -125,6 +127,8 @@ const (
 	PrettyPrintFlag = "pretty-print"
 	// GroupErrorMessagesFlag is the flag for grouping similar error messages.
 	GroupErrorMessagesFlag = "group-error-messages"
+	// FuncAnalysisTimeoutFlag is the flag for setting a timeout (in sec) for budgeting a function's backprop analysis
+	FuncAnalysisTimeoutFlag = "func-analysis-timeout-in-sec"
 	// IncludePkgsFlag is the flag name for include package prefixes.
 	IncludePkgsFlag = "include-pkgs"
 	// ExcludePkgsFlag is the flag name for exclude package prefixes.
@@ -145,6 +149,7 @@ func newFlagSet() flag.FlagSet {
 	// Instead, we will use the flags through the analyzer's Flags field later.
 	_ = fs.Bool(PrettyPrintFlag, true, "Pretty print the error messages")
 	_ = fs.Bool(GroupErrorMessagesFlag, true, "Group similar error messages")
+	_ = fs.Int(FuncAnalysisTimeoutFlag, 1800, "Timeout (in sec) for analyzing each function")
 	_ = fs.String(IncludePkgsFlag, "", "Comma-separated list of packages to analyze")
 	_ = fs.String(ExcludePkgsFlag, "", "Comma-separated list of packages to exclude from analysis")
 	_ = fs.String(ExcludeFileDocStringsFlag, "", "Comma-separated list of docstrings to exclude from analysis")
@@ -170,6 +175,9 @@ func run(pass *analysis.Pass) (any, error) {
 	}
 	if groupErrorMessages, ok := pass.Analyzer.Flags.Lookup(GroupErrorMessagesFlag).Value.(flag.Getter).Get().(bool); ok {
 		conf.GroupErrorMessages = groupErrorMessages
+	}
+	if funcAnalysisTimeout, ok := pass.Analyzer.Flags.Lookup(FuncAnalysisTimeoutFlag).Value.(flag.Getter).Get().(int); ok {
+		conf.FuncAnalysisTimeout = funcAnalysisTimeout
 	}
 	if enableStructInit, ok := pass.Analyzer.Flags.Lookup(ExperimentalStructInitEnableFlag).Value.(flag.Getter).Get().(bool); ok {
 		conf.ExperimentalStructInitEnable = enableStructInit
