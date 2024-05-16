@@ -149,7 +149,7 @@ func newFlagSet() flag.FlagSet {
 	// Instead, we will use the flags through the analyzer's Flags field later.
 	_ = fs.Bool(PrettyPrintFlag, true, "Pretty print the error messages")
 	_ = fs.Bool(GroupErrorMessagesFlag, true, "Group similar error messages")
-	_ = fs.Int(FuncAnalysisTimeoutFlag, 1800, "Timeout (in sec) for analyzing each function")
+	_ = fs.Int(FuncAnalysisTimeoutFlag, 1, "Timeout (in sec) for analyzing each function")
 	_ = fs.String(IncludePkgsFlag, "", "Comma-separated list of packages to analyze")
 	_ = fs.String(ExcludePkgsFlag, "", "Comma-separated list of packages to exclude from analysis")
 	_ = fs.String(ExcludeFileDocStringsFlag, "", "Comma-separated list of docstrings to exclude from analysis")
