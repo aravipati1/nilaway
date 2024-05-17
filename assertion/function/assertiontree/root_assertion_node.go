@@ -1344,3 +1344,22 @@ rchildloop:
 		left.SetChildren(append(left.Children(), freshrchild))
 	}
 }
+
+// hasDuplicateNodes checks if the assertion tree rooted at `r` has any duplicate nodes
+func (r *RootAssertionNode) hasDuplicateNodes() bool {
+	visited := make(map[AssertionNode]bool)
+	queue := []AssertionNode{r}
+
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		for visitedNode, _ := range visited {
+			if r.shallowEqNodes(node, visitedNode) && annotation.ConsumeTriggerSlicesEq(node.ConsumeTriggers(), visitedNode.ConsumeTriggers()) {
+				return true
+			}
+		}
+		visited[node] = true
+		queue = append(queue, node.Children()...)
+	}
+	return false
+}

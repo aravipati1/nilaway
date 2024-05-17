@@ -924,6 +924,10 @@ func BackpropAcrossFunc(ctx context.Context, pass *analysis.Pass, decl *ast.Func
 				return nil, roundCount, stableRoundCount, err
 			}
 
+			if nextAssertions[i].hasDuplicateNodes() {
+				return nil, fmt.Errorf("duplicate assertion nodes found in block %d", i)
+			}
+
 			// Monotonize updates updatedThisRound to reflect whether the assertions changed at a given index.
 			if currAssertions[i] != nil {
 				if !nextAssertions[i].eqNodes(nextAssertions[i], currAssertions[i]) {
